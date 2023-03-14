@@ -3,16 +3,17 @@ package guesswidth
 import (
 	"fmt"
 	"strings"
+	"unicode"
 
 	"github.com/mattn/go-runewidth"
 )
 
 func ToTable(lines []string, header int, trimSpace bool) [][]string {
-	pos := widthPosition(lines, header)
+	pos := widthPositions(lines, header, 4)
 	return toTable(lines, pos, trimSpace)
 }
 
-func widthPosition(lines []string, header int) []int {
+func widthPositions(lines []string, header int, limit int) []int {
 	var blanks []int
 	for n, line := range lines {
 		if n == header {
@@ -21,37 +22,41 @@ func widthPosition(lines []string, header int) []int {
 		}
 		blanks = countBlanks(blanks, strings.TrimSuffix(line, " "))
 	}
-	return positions(blanks)
+	return positions(blanks, limit)
+}
+
+func split(line string, pos []int, trimSpace bool) []string {
+	n := 0
+	start := 0
+	columns := make([]string, len(pos)+1)
+	lr := []rune(line)
+	for p := 0; p < len(lr); p++ {
+		if n > len(pos)-1 {
+			columns[n] = strings.TrimSpace(string(lr[start:]))
+			break
+		}
+		if pos[n] == p {
+			for ; !unicode.IsSpace(lr[p]); p++ {
+			}
+			if trimSpace {
+				columns[n] = strings.TrimSpace(string(lr[start:p]))
+			} else {
+				columns[n] = string(lr[start:p])
+			}
+			n++
+			start = p
+		}
+		if runewidth.RuneWidth(lr[p]) == 2 {
+			p++
+		}
+	}
+	return columns
 }
 
 func toTable(lines []string, pos []int, trimSpace bool) [][]string {
 	tables := make([][]string, 0, len(lines))
 	for _, line := range lines {
-		p := 0
-		n := 0
-		start := 0
-		columns := make([]string, len(pos)+1)
-		for _, c := range line {
-			if n > len(pos)-1 {
-				columns[n] = strings.TrimSpace(line[start:])
-				break
-			}
-			if pos[n] == p {
-				for ; line[p] != ' '; p++ {
-				}
-				if trimSpace {
-					columns[n] = strings.TrimSpace(line[start:p])
-				} else {
-					columns[n] = line[start:p]
-				}
-				n++
-				start = p + 1
-			}
-			p++
-			if runewidth.RuneWidth(c) == 2 {
-				p++
-			}
-		}
+		columns := split(line, pos, trimSpace)
 		tables = append(tables, columns)
 	}
 	return tables
@@ -90,8 +95,8 @@ func countBlanks(blanks []int, str string) []int {
 	return blanks
 }
 
-func positions(blanks []int) []int {
-	max := 2
+func positions(blanks []int, limit int) []int {
+	max := limit
 	p := 0
 	var pos []int
 	for n, v := range blanks {
@@ -100,7 +105,7 @@ func positions(blanks []int) []int {
 			p = n
 		}
 		if v == 0 {
-			max = 2
+			max = limit
 			if p > 0 {
 				pos = append(pos, p)
 				p = 0
@@ -110,8 +115,8 @@ func positions(blanks []int) []int {
 	return pos
 }
 
-func countPrint(header string, blanks []int) {
-	fmt.Print(string(header))
+func countPrint(line string, blanks []int) {
+	fmt.Println(line)
 	for _, k := range blanks {
 		fmt.Print(k)
 	}
