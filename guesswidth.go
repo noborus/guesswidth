@@ -11,23 +11,27 @@ import (
 )
 
 type GuessWidth struct {
-	scanner    *bufio.Scanner
-	pos        []int
-	preRows    [][]string
-	preNum     int
-	preCount   int
-	Header     int
+	reader *bufio.Reader
+	// pos is a list of separator positions.
+	pos      []int
+	preLines []string
+	preCount int
+
+	// Header is the base line number. It starts from 0.
+	Header int
+	// limitSplit is the maximum number of columns to split.
 	LimitSplit int
-	TrimSpace  bool
+	// TrimSpace is whether to trim the space in the value.
+	TrimSpace bool
 }
 
-var PreNum = 10
+var PreNum = 100000
 
-func New(r io.Reader) *GuessWidth {
-	scanner := bufio.NewScanner(r)
+func NewReader(r io.Reader) *GuessWidth {
+	reader := bufio.NewReader(r)
 	g := &GuessWidth{
-		scanner:    scanner,
-		preNum:     PreNum,
+		reader:     reader,
+		preCount:   0,
 		Header:     0,
 		LimitSplit: 0,
 		TrimSpace:  true,
@@ -35,8 +39,10 @@ func New(r io.Reader) *GuessWidth {
 	return g
 }
 
+// ReadAll reads all rows
+// and returns a two-dimensional slice of rows and columns.
 func (g *GuessWidth) ReadAll() [][]string {
-	g.Scan(g.preNum)
+	g.Scan(PreNum)
 
 	var rows [][]string
 	for {
@@ -49,43 +55,45 @@ func (g *GuessWidth) ReadAll() [][]string {
 	return rows
 }
 
-func (g *GuessWidth) Scan(preRead int) {
-	var lines []string
-	for i := 0; i < preRead; i++ {
-		if !g.scanner.Scan() {
+// Scan preReads and parses the lines.
+func (g *GuessWidth) Scan(preNum int) {
+	for i := 0; i < preNum; i++ {
+		buf, _, err := g.reader.ReadLine()
+		if err != nil {
 			break
 		}
-		lines = append(lines, g.scanner.Text())
+		g.preLines = append(g.preLines, string(buf))
 	}
 
-	g.pos = widthPositions(lines, g.Header)
+	g.pos = widthPositions(g.preLines, g.Header)
 
-	var rows [][]string
 	if g.LimitSplit > 0 {
 		if len(g.pos) > g.LimitSplit {
 			g.pos = g.pos[:g.LimitSplit]
 		}
-		rows = toRows(lines, g.pos, g.TrimSpace)
-	} else {
-		rows = toRows(lines, g.pos, g.TrimSpace)
 	}
-	g.preRows = rows
 	return
 }
 
+// Read reads one row and returns a slice of columns.
+// Scan is executed first if it is not preRead.
 func (g *GuessWidth) Read() ([]string, error) {
-	if len(g.preRows) == 0 {
+	if len(g.preLines) == 0 {
 		g.Scan(PreNum)
 	}
-	if g.preCount < len(g.preRows) {
-		row := g.preRows[g.preCount]
+
+	var line string
+	if g.preCount < len(g.preLines) {
+		line = g.preLines[g.preCount]
 		g.preCount++
-		return row, nil
+	} else {
+		buf, _, err := g.reader.ReadLine()
+		if err != nil {
+			return nil, err
+		}
+		line = string(buf)
 	}
-	if !g.scanner.Scan() {
-		return nil, fmt.Errorf("EOF")
-	}
-	line := g.scanner.Text()
+
 	return split(line, g.pos, g.TrimSpace), nil
 }
 

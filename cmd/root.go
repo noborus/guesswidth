@@ -26,7 +26,7 @@ var (
 )
 
 func writeTable(args []string) {
-	g := guesswidth.New(os.Stdin)
+	g := guesswidth.NewReader(os.Stdin)
 	g.Header = header - 1
 	g.LimitSplit = LimitSplit
 	g.TrimSpace = false
