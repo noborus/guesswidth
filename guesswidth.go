@@ -9,12 +9,21 @@ import (
 )
 
 func ToTable(lines []string, header int, trimSpace bool) [][]string {
-	pos := widthPositions(lines, header, 4)
+	pos := widthPositions(lines, header)
 	return toTable(lines, pos, trimSpace)
 }
 
-func widthPositions(lines []string, header int, limit int) []int {
+func ToTableN(lines []string, header int, numSplit int, trimSpace bool) [][]string {
+	pos := widthPositions(lines, header)
+	if len(pos) > numSplit {
+		pos = pos[:numSplit]
+	}
+	return toTable(lines, pos, trimSpace)
+}
+
+func widthPositions(lines []string, header int) []int {
 	var blanks []int
+	limit := 2
 	for n, line := range lines {
 		if n == header {
 			blanks = lookupBlanks(strings.TrimSuffix(line, " "))
@@ -32,16 +41,17 @@ func split(line string, pos []int, trimSpace bool) []string {
 	lr := []rune(line)
 	for p := 0; p < len(lr); p++ {
 		if n > len(pos)-1 {
-			columns[n] = strings.TrimSpace(string(lr[start:]))
+			start = p
 			break
 		}
 		if pos[n] == p {
-			for ; !unicode.IsSpace(lr[p]); p++ {
+			end := p
+			for ; !unicode.IsSpace(lr[end]); end++ {
 			}
 			if trimSpace {
-				columns[n] = strings.TrimSpace(string(lr[start:p]))
+				columns[n] = strings.TrimSpace(string(lr[start:end]))
 			} else {
-				columns[n] = string(lr[start:p])
+				columns[n] = string(lr[start:end])
 			}
 			n++
 			start = p
@@ -50,6 +60,7 @@ func split(line string, pos []int, trimSpace bool) []string {
 			p++
 		}
 	}
+	columns[len(columns)-1] = strings.TrimSpace(string(lr[start:]))
 	return columns
 }
 
@@ -62,9 +73,11 @@ func toTable(lines []string, pos []int, trimSpace bool) [][]string {
 	return tables
 }
 
-func lookupBlanks(str string) []int {
+// Creates a blank(1) and non-blank(0) slice.
+// Execute for the base line (header line).
+func lookupBlanks(line string) []int {
 	blanks := make([]int, 0)
-	for _, v := range str {
+	for _, v := range line {
 		if v == ' ' {
 			blanks = append(blanks, 1)
 		} else {
@@ -77,24 +90,26 @@ func lookupBlanks(str string) []int {
 	return blanks
 }
 
-func countBlanks(blanks []int, str string) []int {
-	width := 0
-	for _, v := range str {
-		if v == ' ' && blanks[width] > 0 {
-			blanks[width] += 1
+// Count up if the line is blank where the reference line was blank.
+func countBlanks(blanks []int, line string) []int {
+	n := 0
+	for _, r := range line {
+		if r == ' ' && blanks[n] > 0 {
+			blanks[n] += 1
 		}
 
-		width += 1
-		if runewidth.RuneWidth(v) == 2 {
-			width += 1
+		n += 1
+		if runewidth.RuneWidth(r) == 2 {
+			n += 1
 		}
-		if width >= len(blanks) {
+		if n >= len(blanks) {
 			break
 		}
 	}
 	return blanks
 }
 
+// Generates a list of separator positions from a blank slice.
 func positions(blanks []int, limit int) []int {
 	max := limit
 	p := 0

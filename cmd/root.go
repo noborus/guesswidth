@@ -3,6 +3,7 @@ package cmd
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/noborus/guesswidth"
@@ -12,33 +13,50 @@ import (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "guesswidth",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Guess the width of the column and split it",
+	Long: `Guess the width of the columns from the header and body,
+split them, insert fences and output.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		trans(args)
+		writeTable(args)
 	},
 }
 
-var delimiter string
+var (
+	fence    string
+	header   int
+	numSplit int
+)
 
-func trans(args []string) {
-	r := os.Stdin
+func writeTable(args []string) {
+	lines := readAll(os.Stdin)
+	table := toTable(lines, false)
+	write(table)
+}
+
+func readAll(r io.Reader) []string {
 	var lines []string
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		lines = append(lines, scanner.Text())
 	}
+	return lines
+}
 
-	tables := guesswidth.ToTable(lines, 0, false)
-	for _, row := range tables {
+func toTable(lines []string, trimSpace bool) [][]string {
+	var table [][]string
+	if numSplit > 0 {
+		table = guesswidth.ToTableN(lines, header-1, numSplit, trimSpace)
+	} else {
+		table = guesswidth.ToTable(lines, header-1, trimSpace)
+	}
+	return table
+}
+
+func write(table [][]string) {
+	for _, row := range table {
 		for n, col := range row {
 			if n > 0 {
-				fmt.Print(delimiter)
+				fmt.Print(fence)
 			}
 			fmt.Printf("%s", col)
 		}
@@ -54,16 +72,9 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVar(&delimiter, "delimiter", ",", "delimiter")
-
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-
-	//rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.guesswidth.yaml)")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
+	rootCmd.PersistentFlags().StringVar(&fence, "fence", "|", "fence")
+	rootCmd.PersistentFlags().IntVar(&header, "header", 1, "header line number")
+	rootCmd.PersistentFlags().IntVar(&numSplit, "split", -1, "number to split")
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 
