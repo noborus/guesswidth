@@ -10,59 +10,83 @@ import (
 	"github.com/mattn/go-runewidth"
 )
 
-type guessWidth struct {
+type GuessWidth struct {
 	scanner    *bufio.Scanner
-	preLines   []string
+	pos        []int
+	preRows    [][]string
 	preNum     int
+	preCount   int
 	Header     int
 	LimitSplit int
 	TrimSpace  bool
 }
 
-var preNum = 10
+var PreNum = 10
 
-func New(r io.Reader) *guessWidth {
+func New(r io.Reader) *GuessWidth {
 	scanner := bufio.NewScanner(r)
-	lines := preRead(scanner, preNum)
-	return &guessWidth{
+	g := &GuessWidth{
 		scanner:    scanner,
-		preLines:   lines,
-		preNum:     preNum,
+		preNum:     PreNum,
 		Header:     0,
 		LimitSplit: 0,
 		TrimSpace:  true,
 	}
+	return g
 }
 
-func (g *guessWidth) Rows() [][]string {
-	pos := widthPositions(g.preLines, g.Header)
-	var rows [][]string
-	if g.LimitSplit > 0 {
-		if len(pos) > g.LimitSplit {
-			pos = pos[:g.LimitSplit]
-		}
-		rows = toRows(g.preLines, pos, g.TrimSpace)
-	} else {
-		rows = toRows(g.preLines, pos, g.TrimSpace)
-	}
+func (g *GuessWidth) ReadAll() [][]string {
+	g.Scan(g.preNum)
 
-	for g.scanner.Scan() {
-		line := g.scanner.Text()
-		columns := split(line, pos, g.TrimSpace)
+	var rows [][]string
+	for {
+		columns, err := g.Read()
+		if err != nil {
+			break
+		}
 		rows = append(rows, columns)
 	}
 	return rows
 }
 
-func preRead(scanner *bufio.Scanner, preRead int) []string {
+func (g *GuessWidth) Scan(preRead int) {
 	var lines []string
 	for i := 0; i < preRead; i++ {
-		if !scanner.Scan() {
-			return lines
+		if !g.scanner.Scan() {
+			break
 		}
-		lines = append(lines, scanner.Text())
+		lines = append(lines, g.scanner.Text())
 	}
-	return lines
+
+	g.pos = widthPositions(lines, g.Header)
+
+	var rows [][]string
+	if g.LimitSplit > 0 {
+		if len(g.pos) > g.LimitSplit {
+			g.pos = g.pos[:g.LimitSplit]
+		}
+		rows = toRows(lines, g.pos, g.TrimSpace)
+	} else {
+		rows = toRows(lines, g.pos, g.TrimSpace)
+	}
+	g.preRows = rows
+	return
+}
+
+func (g *GuessWidth) Read() ([]string, error) {
+	if len(g.preRows) == 0 {
+		g.Scan(PreNum)
+	}
+	if g.preCount < len(g.preRows) {
+		row := g.preRows[g.preCount]
+		g.preCount++
+		return row, nil
+	}
+	if !g.scanner.Scan() {
+		return nil, fmt.Errorf("EOF")
+	}
+	line := g.scanner.Text()
+	return split(line, g.pos, g.TrimSpace), nil
 }
 
 func ToTable(lines []string, header int, trimSpace bool) [][]string {

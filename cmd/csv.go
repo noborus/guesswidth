@@ -31,11 +31,14 @@ func toCSV(delimiter rune) {
 	g.Header = header - 1
 	g.LimitSplit = LimitSplit
 	g.TrimSpace = true
-	table := g.Rows()
 
 	w := csv.NewWriter(os.Stdout)
 	w.Comma = delimiter
-	for _, record := range table {
+	for {
+		record, err := g.Read()
+		if err != nil {
+			break
+		}
 		if err := w.Write(record); err != nil {
 			log.Fatal(err)
 		}

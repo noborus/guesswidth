@@ -30,13 +30,15 @@ func writeTable(args []string) {
 	g.Header = header - 1
 	g.LimitSplit = LimitSplit
 	g.TrimSpace = false
-	table := g.Rows()
-
-	write(table)
+	write(g)
 }
 
-func write(table [][]string) {
-	for _, row := range table {
+func write(g *guesswidth.GuessWidth) {
+	for {
+		row, err := g.Read()
+		if err != nil {
+			break
+		}
 		for n, col := range row {
 			if n > 0 {
 				fmt.Print(fence)
