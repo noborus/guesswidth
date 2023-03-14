@@ -58,7 +58,7 @@ func Test_toTable(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := toTable(tt.args.lines, tt.args.pos, tt.args.trimSpace); !reflect.DeepEqual(got, tt.want) {
+			if got := toRows(tt.args.lines, tt.args.pos, tt.args.trimSpace); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("toTable() = %v, want %v", got, tt.want)
 			}
 		})

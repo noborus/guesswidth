@@ -1,9 +1,7 @@
 package cmd
 
 import (
-	"bufio"
 	"fmt"
-	"io"
 	"os"
 
 	"github.com/noborus/guesswidth"
@@ -22,34 +20,19 @@ split them, insert fences and output.`,
 }
 
 var (
-	fence    string
-	header   int
-	numSplit int
+	fence      string
+	header     int
+	LimitSplit int
 )
 
 func writeTable(args []string) {
-	lines := readAll(os.Stdin)
-	table := toTable(lines, false)
+	g := guesswidth.New(os.Stdin)
+	g.Header = header - 1
+	g.LimitSplit = LimitSplit
+	g.TrimSpace = false
+	table := g.Rows()
+
 	write(table)
-}
-
-func readAll(r io.Reader) []string {
-	var lines []string
-	scanner := bufio.NewScanner(r)
-	for scanner.Scan() {
-		lines = append(lines, scanner.Text())
-	}
-	return lines
-}
-
-func toTable(lines []string, trimSpace bool) [][]string {
-	var table [][]string
-	if numSplit > 0 {
-		table = guesswidth.ToTableN(lines, header-1, numSplit, trimSpace)
-	} else {
-		table = guesswidth.ToTable(lines, header-1, trimSpace)
-	}
-	return table
 }
 
 func write(table [][]string) {
@@ -74,7 +57,7 @@ func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVar(&fence, "fence", "|", "fence")
 	rootCmd.PersistentFlags().IntVar(&header, "header", 1, "header line number")
-	rootCmd.PersistentFlags().IntVar(&numSplit, "split", -1, "number to split")
+	rootCmd.PersistentFlags().IntVar(&LimitSplit, "split", -1, "maximum number of splits")
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 

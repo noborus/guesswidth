@@ -1,16 +1,73 @@
 package guesswidth
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"strings"
 	"unicode"
 
 	"github.com/mattn/go-runewidth"
 )
 
+type guessWidth struct {
+	scanner    *bufio.Scanner
+	preLines   []string
+	preNum     int
+	Header     int
+	LimitSplit int
+	TrimSpace  bool
+}
+
+var preNum = 10
+
+func New(r io.Reader) *guessWidth {
+	scanner := bufio.NewScanner(r)
+	lines := preRead(scanner, preNum)
+	return &guessWidth{
+		scanner:    scanner,
+		preLines:   lines,
+		preNum:     preNum,
+		Header:     0,
+		LimitSplit: 0,
+		TrimSpace:  true,
+	}
+}
+
+func (g *guessWidth) Rows() [][]string {
+	pos := widthPositions(g.preLines, g.Header)
+	var rows [][]string
+	if g.LimitSplit > 0 {
+		if len(pos) > g.LimitSplit {
+			pos = pos[:g.LimitSplit]
+		}
+		rows = toRows(g.preLines, pos, g.TrimSpace)
+	} else {
+		rows = toRows(g.preLines, pos, g.TrimSpace)
+	}
+
+	for g.scanner.Scan() {
+		line := g.scanner.Text()
+		columns := split(line, pos, g.TrimSpace)
+		rows = append(rows, columns)
+	}
+	return rows
+}
+
+func preRead(scanner *bufio.Scanner, preRead int) []string {
+	var lines []string
+	for i := 0; i < preRead; i++ {
+		if !scanner.Scan() {
+			return lines
+		}
+		lines = append(lines, scanner.Text())
+	}
+	return lines
+}
+
 func ToTable(lines []string, header int, trimSpace bool) [][]string {
 	pos := widthPositions(lines, header)
-	return toTable(lines, pos, trimSpace)
+	return toRows(lines, pos, trimSpace)
 }
 
 func ToTableN(lines []string, header int, numSplit int, trimSpace bool) [][]string {
@@ -18,13 +75,19 @@ func ToTableN(lines []string, header int, numSplit int, trimSpace bool) [][]stri
 	if len(pos) > numSplit {
 		pos = pos[:numSplit]
 	}
-	return toTable(lines, pos, trimSpace)
+	return toRows(lines, pos, trimSpace)
 }
 
 func widthPositions(lines []string, header int) []int {
 	var blanks []int
 	limit := 2
+	if header < 0 {
+		header = 0
+	}
 	for n, line := range lines {
+		if n < header {
+			continue
+		}
 		if n == header {
 			blanks = lookupBlanks(strings.TrimSuffix(line, " "))
 			continue
@@ -64,13 +127,13 @@ func split(line string, pos []int, trimSpace bool) []string {
 	return columns
 }
 
-func toTable(lines []string, pos []int, trimSpace bool) [][]string {
-	tables := make([][]string, 0, len(lines))
+func toRows(lines []string, pos []int, trimSpace bool) [][]string {
+	rows := make([][]string, 0, len(lines))
 	for _, line := range lines {
 		columns := split(line, pos, trimSpace)
-		tables = append(tables, columns)
+		rows = append(rows, columns)
 	}
-	return tables
+	return rows
 }
 
 // Creates a blank(1) and non-blank(0) slice.

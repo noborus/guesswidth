@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/noborus/guesswidth"
 	"github.com/spf13/cobra"
 )
 
@@ -26,8 +27,12 @@ var csvCmd = &cobra.Command{
 }
 
 func toCSV(delimiter rune) {
-	lines := readAll(os.Stdin)
-	table := toTable(lines, true)
+	g := guesswidth.New(os.Stdin)
+	g.Header = header - 1
+	g.LimitSplit = LimitSplit
+	g.TrimSpace = true
+	table := g.Rows()
+
 	w := csv.NewWriter(os.Stdout)
 	w.Comma = delimiter
 	for _, record := range table {
