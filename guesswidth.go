@@ -13,10 +13,14 @@ import (
 type GuessWidth struct {
 	reader *bufio.Reader
 	// pos is a list of separator positions.
-	pos      []int
+	pos []int
+	// preLines stores the lines read for scan.
 	preLines []string
+	// preCount is the number returned by read.
 	preCount int
 
+	// ScanNum is the number to scan to analyze.
+	ScanNum int
 	// Header is the base line number. It starts from 0.
 	Header int
 	// limitSplit is the maximum number of columns to split.
@@ -25,12 +29,12 @@ type GuessWidth struct {
 	TrimSpace bool
 }
 
-var PreNum = 10
-
+// NewReader returns a new Reader that reads from r.
 func NewReader(r io.Reader) *GuessWidth {
 	reader := bufio.NewReader(r)
 	g := &GuessWidth{
 		reader:     reader,
+		ScanNum:    100,
 		preCount:   0,
 		Header:     0,
 		LimitSplit: 0,
@@ -42,7 +46,7 @@ func NewReader(r io.Reader) *GuessWidth {
 // ReadAll reads all rows
 // and returns a two-dimensional slice of rows and columns.
 func (g *GuessWidth) ReadAll() [][]string {
-	g.Scan(PreNum)
+	g.Scan(g.ScanNum)
 
 	var rows [][]string
 	for {
@@ -56,8 +60,8 @@ func (g *GuessWidth) ReadAll() [][]string {
 }
 
 // Scan preReads and parses the lines.
-func (g *GuessWidth) Scan(preNum int) {
-	for i := 0; i < preNum; i++ {
+func (g *GuessWidth) Scan(num int) {
+	for i := 0; i < num; i++ {
 		buf, _, err := g.reader.ReadLine()
 		if err != nil {
 			break
@@ -72,14 +76,13 @@ func (g *GuessWidth) Scan(preNum int) {
 			g.pos = g.pos[:g.LimitSplit]
 		}
 	}
-	return
 }
 
 // Read reads one row and returns a slice of columns.
 // Scan is executed first if it is not preRead.
 func (g *GuessWidth) Read() ([]string, error) {
 	if len(g.preLines) == 0 {
-		g.Scan(PreNum)
+		g.Scan(g.ScanNum)
 	}
 
 	var line string
@@ -97,11 +100,13 @@ func (g *GuessWidth) Read() ([]string, error) {
 	return split(line, g.pos, g.TrimSpace), nil
 }
 
+// ToTable parses a slice of rows and returns a table.
 func ToTable(lines []string, header int, trimSpace bool) [][]string {
 	pos := widthPositions(lines, header)
 	return toRows(lines, pos, trimSpace)
 }
 
+// ToTableN parses a slice of rows and returns a table, but limits the number of splits.
 func ToTableN(lines []string, header int, numSplit int, trimSpace bool) [][]string {
 	pos := widthPositions(lines, header)
 	if len(pos) > numSplit {
@@ -257,7 +262,8 @@ func positions(blanks []int, limit int) []int {
 	return pos
 }
 
-func countPrint(line string, blanks []int) {
+// debugCountPrint is for debugging which prints the space count.
+func debugCountPrint(line string, blanks []int) {
 	fmt.Println(line)
 	for _, k := range blanks {
 		fmt.Print(k)
