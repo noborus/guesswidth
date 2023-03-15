@@ -14,7 +14,7 @@ guesswidth is smarter at guessing separators than just spaces.
 There is also a guesswidth command.
 
 ```console
-go install github.com/noborus/guesswidth/cmd/guesswidth
+go install github.com/noborus/guesswidth/cmd/guesswidth@latest
 ```
 
 Guess the width output with no delimiters in the command.
