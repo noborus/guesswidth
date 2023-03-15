@@ -1,6 +1,6 @@
 # guesswidth
 
-[![Go](https://github.com/noborus/guesswidth/actions/workflows/build.yml/badge.svg)](https://github.com/noborus/guesswidth/actions/workflows/build.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/noborus/guesswidth.svg)](https://pkg.go.dev/github.com/noborus/guesswidth) [![Go](https://github.com/noborus/guesswidth/actions/workflows/build.yml/badge.svg)](https://github.com/noborus/guesswidth/actions/workflows/build.yml)
 
 ## ovewerview
 
