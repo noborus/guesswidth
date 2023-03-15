@@ -1,6 +1,6 @@
 BINARY_NAME := guesswidth
 SRCS := $(shell git ls-files '*.go')
-LDFLAGS := "-X main.version=$(shell git describe --tags --abbrev=0 --always) -X main.revision=$(shell git rev-parse --short HEAD)"
+LDFLAGS := "-X github.com/noborus/guesswidth.version=$(shell git describe --tags --abbrev=0 --always) -X github.com/noborus/guesswidth.revision=$(shell git rev-parse --short HEAD)"
 
 all: build
 

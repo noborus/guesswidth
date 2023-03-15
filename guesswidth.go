@@ -9,6 +9,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"runtime/debug"
 	"strings"
 	"unicode"
 
@@ -284,4 +285,20 @@ func debugCountPrint(line string, blanks []int) {
 		fmt.Print(k)
 	}
 	fmt.Println()
+}
+
+var (
+	version  string
+	revision string
+)
+
+func Version() string {
+	if version != "" {
+		return version + " rev:" + revision
+	}
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		return "(devel)"
+	}
+	return info.Main.Version
 }

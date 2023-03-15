@@ -14,6 +14,7 @@ var rootCmd = &cobra.Command{
 	Short: "Guess the width of the column and split it",
 	Long: `Guess the width of the columns from the header and body,
 split them, insert fences and output.`,
+	Version: guesswidth.Version(),
 	Run: func(cmd *cobra.Command, args []string) {
 		writeTable(args)
 	},
