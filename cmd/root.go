@@ -22,14 +22,18 @@ split them, insert fences and output.`,
 var (
 	fence      string
 	header     int
-	LimitSplit int
+	limitSplit int
+	scanNum    int
 )
 
 func writeTable(args []string) {
 	g := guesswidth.NewReader(os.Stdin)
 	g.Header = header - 1
-	g.LimitSplit = LimitSplit
+	g.LimitSplit = limitSplit
 	g.TrimSpace = false
+	if scanNum > 0 {
+		g.ScanNum = scanNum
+	}
 	write(g)
 }
 
@@ -59,7 +63,8 @@ func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.PersistentFlags().StringVar(&fence, "fence", "|", "fence")
 	rootCmd.PersistentFlags().IntVar(&header, "header", 1, "header line number")
-	rootCmd.PersistentFlags().IntVar(&LimitSplit, "split", -1, "maximum number of splits")
+	rootCmd.PersistentFlags().IntVar(&limitSplit, "split", -1, "maximum number of splits")
+	rootCmd.PersistentFlags().IntVar(&scanNum, "scannum", 100, "number of line to scan")
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
 

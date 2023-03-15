@@ -1,3 +1,8 @@
+// Package guesswidth handles the format as formatted by printf.
+// Spaces exist as delimiters, but spaces are not always delimiters.
+// The width seems to be a fixed length, but it doesn't always fit.
+// guesswidth finds the column separation position
+// from the reference line(header) and multiple lines(body).
 package guesswidth
 
 import (
@@ -10,6 +15,7 @@ import (
 	"github.com/mattn/go-runewidth"
 )
 
+// GuessWidth reads records from printf-like output.
 type GuessWidth struct {
 	reader *bufio.Reader
 	// pos is a list of separator positions.
@@ -46,7 +52,9 @@ func NewReader(r io.Reader) *GuessWidth {
 // ReadAll reads all rows
 // and returns a two-dimensional slice of rows and columns.
 func (g *GuessWidth) ReadAll() [][]string {
-	g.Scan(g.ScanNum)
+	if len(g.preLines) == 0 {
+		g.Scan(g.ScanNum)
+	}
 
 	var rows [][]string
 	for {
@@ -209,12 +217,19 @@ func toRows(lines []string, pos []int, trimSpace bool) [][]string {
 // Execute for the base line (header line).
 func lookupBlanks(line string) []int {
 	blanks := make([]int, 0)
+	first := true
 	for _, v := range line {
 		if v == ' ' {
+			if first {
+				blanks = append(blanks, 0)
+				continue
+			}
 			blanks = append(blanks, 1)
-		} else {
-			blanks = append(blanks, 0)
+			continue
 		}
+
+		first = false
+		blanks = append(blanks, 0)
 		if runewidth.RuneWidth(v) == 2 {
 			blanks = append(blanks, 0)
 		}

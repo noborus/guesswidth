@@ -29,8 +29,11 @@ var csvCmd = &cobra.Command{
 func toCSV(delimiter rune) {
 	g := guesswidth.NewReader(os.Stdin)
 	g.Header = header - 1
-	g.LimitSplit = LimitSplit
+	g.LimitSplit = limitSplit
 	g.TrimSpace = true
+	if scanNum > 0 {
+		g.ScanNum = scanNum
+	}
 
 	w := csv.NewWriter(os.Stdout)
 	w.Comma = delimiter
