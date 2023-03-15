@@ -25,7 +25,7 @@ type GuessWidth struct {
 	TrimSpace bool
 }
 
-var PreNum = 100000
+var PreNum = 10
 
 func NewReader(r io.Reader) *GuessWidth {
 	reader := bufio.NewReader(r)
@@ -129,6 +129,40 @@ func widthPositions(lines []string, header int) []int {
 	return positions(blanks, limit)
 }
 
+func separatorPosition(lr []rune, p int, pos []int, n int) int {
+	if unicode.IsSpace(lr[p]) {
+		return p
+	}
+
+	f := p
+	fp := 0
+	for ; !unicode.IsSpace(lr[f]); f++ {
+		fp++
+	}
+
+	b := p
+	bp := 0
+	for ; !unicode.IsSpace(lr[b]); b-- {
+		bp++
+	}
+
+	if b == pos[n] {
+		return f
+	}
+	if n < len(pos)-1 {
+		if f == pos[n+1] {
+			return b
+		}
+		if b == pos[n] {
+			return f
+		}
+		if b > pos[n] && b < pos[n+1] {
+			return b
+		}
+	}
+	return f
+}
+
 func split(line string, pos []int, trimSpace bool) []string {
 	n := 0
 	start := 0
@@ -140,16 +174,14 @@ func split(line string, pos []int, trimSpace bool) []string {
 			break
 		}
 		if pos[n] == p {
-			end := p
-			for ; !unicode.IsSpace(lr[end]); end++ {
-			}
+			end := separatorPosition(lr, p, pos, n)
 			if trimSpace {
 				columns[n] = strings.TrimSpace(string(lr[start:end]))
 			} else {
 				columns[n] = string(lr[start:end])
 			}
 			n++
-			start = p
+			start = end
 		}
 		if runewidth.RuneWidth(lr[p]) == 2 {
 			p++
