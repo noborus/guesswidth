@@ -179,14 +179,14 @@ func split(line string, pos []int, trimSpace bool) []string {
 			break
 		}
 		if pos[n] == p {
-			end := separatorPosition(lr, p, pos, n)
+			p = separatorPosition(lr, p, pos, n)
 			if trimSpace {
-				columns[n] = strings.TrimSpace(string(lr[start:end]))
+				columns[n] = strings.TrimSpace(string(lr[start:p]))
 			} else {
-				columns[n] = string(lr[start:end])
+				columns[n] = string(lr[start:p])
 			}
 			n++
-			start = end
+			start = p
 		}
 		if runewidth.RuneWidth(lr[p]) == 2 {
 			p++
