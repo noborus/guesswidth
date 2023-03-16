@@ -150,13 +150,14 @@ func separatorPosition(lr []rune, p int, pos []int, n int) int {
 
 	f := p
 	fp := 0
-	for ; !unicode.IsSpace(lr[f]); f++ {
+
+	for ; f < len(lr) && !unicode.IsSpace(lr[f]); f++ {
 		fp++
 	}
 
 	b := p
 	bp := 0
-	for ; !unicode.IsSpace(lr[b]); b-- {
+	for ; b > 0 && !unicode.IsSpace(lr[b]); b-- {
 		bp++
 	}
 
@@ -182,24 +183,27 @@ func split(line string, pos []int, trimSpace bool) []string {
 	start := 0
 	columns := make([]string, len(pos)+1)
 	lr := []rune(line)
+	w := 0
 	for p := 0; p < len(lr); p++ {
 		if n > len(pos)-1 {
 			start = p
 			break
 		}
-		if pos[n] == p {
-			p = separatorPosition(lr, p, pos, n)
+		if pos[n] <= w {
+			end := separatorPosition(lr, p, pos, n)
+			if start > end {
+				break
+			}
+			col := string(lr[start:end])
 			if trimSpace {
-				columns[n] = strings.TrimSpace(string(lr[start:p]))
+				columns[n] = strings.TrimSpace(col)
 			} else {
-				columns[n] = string(lr[start:p])
+				columns[n] = string(col)
 			}
 			n++
-			start = p
+			start = end
 		}
-		if runewidth.RuneWidth(lr[p]) == 2 {
-			p++
-		}
+		w += runewidth.RuneWidth(lr[p])
 	}
 	columns[len(columns)-1] = strings.TrimSpace(string(lr[start:]))
 	return columns
