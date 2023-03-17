@@ -205,7 +205,14 @@ func split(line string, pos []int, trimSpace bool) []string {
 		}
 		w += runewidth.RuneWidth(lr[p])
 	}
-	columns[len(columns)-1] = strings.TrimSpace(string(lr[start:]))
+	if n < len(columns) {
+		col := string(lr[start:])
+		if trimSpace {
+			columns[n] = strings.TrimSpace(col)
+		} else {
+			columns[n] = string(col)
+		}
+	}
 	return columns
 }
 
