@@ -9,6 +9,9 @@ guesswidth guesses the separator position in CLI output.
 The output of the `ps` command has no delimiters, making the values difficult to machine-readable.
 guesswidth is smarter at guessing separators than just spaces.
 
+guesswidth is guessed based on the position of characters in the header.
+So having a header will give you better results.
+
 ## install command
 
 There is also a guesswidth command.
@@ -48,3 +51,25 @@ PID,TTY,TIME,CMD
 733212,pts/3,00:00:00,tee
 733213,pts/3,00:00:00,guesswidth
 ```
+
+##
+
+
+## Examples
+
+guesswidth inserts a delimiter (| by default)
+(Colors are changed here for clarity).
+
+Even if there are spaces in the header or body, they will be separated correctly.
+
+### ps
+
+![ps](./docs/ps.png)
+
+### docker ps
+
+![docker-ps](./docs/docker-ps.png)
+
+### docker node
+
+![docker node ls](./docs/docker-node.png)
