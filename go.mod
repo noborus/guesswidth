@@ -1,6 +1,6 @@
 module github.com/noborus/guesswidth
 
-go 1.20
+go 1.18
 
 require (
 	github.com/mattn/go-runewidth v0.0.14
