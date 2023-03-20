@@ -32,6 +32,9 @@ type GuessWidth struct {
 	Header int
 	// limitSplit is the maximum number of columns to split.
 	LimitSplit int
+	// MinLines is the minimum number of lines to recognize as a separator.
+	// 1 if only the header, 2 or more if there is a blank in the body.
+	MinLines int
 	// TrimSpace is whether to trim the space in the value.
 	TrimSpace bool
 }
@@ -45,6 +48,7 @@ func NewReader(r io.Reader) *GuessWidth {
 		preCount:   0,
 		Header:     0,
 		LimitSplit: 0,
+		MinLines:   2,
 		TrimSpace:  true,
 	}
 	return g
@@ -78,7 +82,7 @@ func (g *GuessWidth) Scan(num int) {
 		g.preLines = append(g.preLines, string(buf))
 	}
 
-	g.pos = widthPositions(g.preLines, g.Header)
+	g.pos = Positions(g.preLines, g.Header, g.MinLines)
 
 	if g.LimitSplit > 0 {
 		if len(g.pos) > g.LimitSplit {
@@ -109,24 +113,27 @@ func (g *GuessWidth) Read() ([]string, error) {
 	return split(line, g.pos, g.TrimSpace), nil
 }
 
-// ToTable parses a slice of rows and returns a table.
+// ToTable parses a slice of lines and returns a table.
 func ToTable(lines []string, header int, trimSpace bool) [][]string {
-	pos := widthPositions(lines, header)
+	pos := Positions(lines, header, 2)
 	return toRows(lines, pos, trimSpace)
 }
 
-// ToTableN parses a slice of rows and returns a table, but limits the number of splits.
+// ToTableN parses a slice of lines and returns a table, but limits the number of splits.
 func ToTableN(lines []string, header int, numSplit int, trimSpace bool) [][]string {
-	pos := widthPositions(lines, header)
+	pos := Positions(lines, header, 2)
 	if len(pos) > numSplit {
 		pos = pos[:numSplit]
 	}
 	return toRows(lines, pos, trimSpace)
 }
 
-func widthPositions(lines []string, header int) []int {
+// Positions returns separator positions
+// from multiple lines and header line number.
+// Lines before the header line are ignored.
+func Positions(lines []string, header int, minLines int) []int {
 	var blanks []int
-	limit := 2
+
 	if header < 0 {
 		header = 0
 	}
@@ -140,7 +147,7 @@ func widthPositions(lines []string, header int) []int {
 		}
 		blanks = countBlanks(blanks, strings.TrimSuffix(line, " "))
 	}
-	return positions(blanks, limit)
+	return positions(blanks, minLines)
 }
 
 func separatorPosition(lr []rune, p int, pos []int, n int) int {
@@ -216,6 +223,7 @@ func split(line string, pos []int, trimSpace bool) []string {
 	return columns
 }
 
+// roRows returns rows separated by columns.
 func toRows(lines []string, pos []int, trimSpace bool) [][]string {
 	rows := make([][]string, 0, len(lines))
 	for _, line := range lines {
@@ -269,8 +277,8 @@ func countBlanks(blanks []int, line string) []int {
 }
 
 // Generates a list of separator positions from a blank slice.
-func positions(blanks []int, limit int) []int {
-	max := limit
+func positions(blanks []int, minLines int) []int {
+	max := minLines
 	p := 0
 	var pos []int
 	for n, v := range blanks {
@@ -279,7 +287,7 @@ func positions(blanks []int, limit int) []int {
 			p = n
 		}
 		if v == 0 {
-			max = limit
+			max = minLines
 			if p > 0 {
 				pos = append(pos, p)
 				p = 0
