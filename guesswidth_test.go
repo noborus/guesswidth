@@ -16,6 +16,7 @@ func TestGuessWidth_ReadAll(t *testing.T) {
 		ScanNum    int
 		Header     int
 		LimitSplit int
+		MinLines   int
 		TrimSpace  bool
 	}
 	tests := []struct {
@@ -29,7 +30,8 @@ func TestGuessWidth_ReadAll(t *testing.T) {
 				reader: bufio.NewReader(strings.NewReader(`   PID TTY          TIME CMD
 302965 pts/3    00:00:11 zsh
 709737 pts/3    00:00:00 ps`)),
-				ScanNum: 100,
+				ScanNum:  100,
+				MinLines: 2,
 			},
 			want: [][]string{
 				{"   PID", " TTY     ", "     TIME", "CMD"},
@@ -44,13 +46,30 @@ func TestGuessWidth_ReadAll(t *testing.T) {
 root           1  0.0  0.0 168576 13788 ?        Ss   Mar11   0:49 /sbin/init splash
 noborus   703052  2.1  0.7 1184814400 230920 ?   Sl   10:03   0:45 /opt/google/chrome/chrome
 noborus   721971  0.0  0.0  13716  3524 pts/3    R+   10:39   0:00 ps aux`)),
-				ScanNum: 100,
+				ScanNum:  100,
+				MinLines: 2,
 			},
 			want: [][]string{
 				{"USER     ", "    PID", " %CPU", " %MEM", "    VSZ", "   RSS", " TTY     ", " STAT", " START  ", " TIME", "COMMAND"},
 				{"root     ", "      1", "  0.0", "  0.0", " 168576", " 13788", " ?       ", " Ss  ", " Mar11  ", " 0:49", "/sbin/init splash"},
 				{"noborus  ", " 703052", "  2.1", "  0.7", " 1184814400", " 230920", " ?  ", " Sl  ", " 10:03  ", " 0:45", "/opt/google/chrome/chrome"},
 				{"noborus  ", " 721971", "  0.0", "  0.0", "  13716", "  3524", " pts/3   ", " R+  ", " 10:39  ", " 0:00", "ps aux"},
+			},
+		},
+		{
+			name: "ps limit",
+			fields: fields{
+				reader: bufio.NewReader(strings.NewReader(`   PID TTY          TIME CMD
+302965 pts/3    00:00:11 zsh
+709737 pts/3    00:00:00 ps`)),
+				ScanNum:    100,
+				MinLines:   2,
+				LimitSplit: 2,
+			},
+			want: [][]string{
+				{"   PID", " TTY     ", "    TIME CMD"},
+				{"302965", " pts/3   ", "00:00:11 zsh"},
+				{"709737", " pts/3   ", "00:00:00 ps"},
 			},
 		},
 	}
@@ -64,6 +83,7 @@ noborus   721971  0.0  0.0  13716  3524 pts/3    R+   10:39   0:00 ps aux`)),
 				ScanNum:    tt.fields.ScanNum,
 				Header:     tt.fields.Header,
 				LimitSplit: tt.fields.LimitSplit,
+				MinLines:   tt.fields.MinLines,
 				TrimSpace:  tt.fields.TrimSpace,
 			}
 			if got := g.ReadAll(); !reflect.DeepEqual(got, tt.want) {
