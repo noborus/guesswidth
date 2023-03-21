@@ -2,17 +2,17 @@
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/noborus/guesswidth.svg)](https://pkg.go.dev/github.com/noborus/guesswidth) [![Go](https://github.com/noborus/guesswidth/actions/workflows/build.yml/badge.svg)](https://github.com/noborus/guesswidth/actions/workflows/build.yml)
 
-## ovewerview
+## Overview
 
-guesswidth guesses the separator position in CLI output.
+guesswidth guesses the column position for fixed-width formats(fwf).
 
 The output of the `ps` command has no delimiters, making the values difficult to machine-readable.
-guesswidth is smarter at guessing separators than just spaces.
+guesswidth guesses smarter than just space delimiters.
 
-guesswidth is guessed based on the position of characters in the header.
+guesswidth is guessed based on the position of characters in the **header**.
 So having a header will give you better results.
 
-## install command
+## Install command
 
 There is also a guesswidth command.
 
