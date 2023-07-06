@@ -16,12 +16,16 @@ builds:
     id: "guesswidth"
     main: ./cmd/guesswidth
 archives:
-  - replacements:
-      darwin: Darwin
-      linux: Linux
-      windows: Windows
-      386: i386
-      amd64: x86_64
+- name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- if eq .Os "freebsd" }}FreeBSD
+      {{- else }}{{ title .Os }}{{ end }}_
+      {{- if eq .Arch "amd64" }}64bit
+      {{- else if eq .Arch "386" }}32bit
+      {{- else if eq .Arch "arm64" }}ARM64
+      {{- else if eq .Arch "riscv64" }}RISCV
+      {{- else }}{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ end }}
 checksum:
   name_template: 'checksums.txt'
 snapshot:
