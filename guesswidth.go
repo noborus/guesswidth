@@ -261,6 +261,9 @@ func lookupBlanks(line string) []int {
 func countBlanks(blanks []int, line string) []int {
 	n := 0
 	for _, r := range line {
+		if n >= len(blanks) {
+			break
+		}
 		if r == ' ' && blanks[n] > 0 {
 			blanks[n] += 1
 		}
@@ -268,9 +271,6 @@ func countBlanks(blanks []int, line string) []int {
 		n += 1
 		if runewidth.RuneWidth(r) == 2 {
 			n += 1
-		}
-		if n >= len(blanks) {
-			break
 		}
 	}
 	return blanks
