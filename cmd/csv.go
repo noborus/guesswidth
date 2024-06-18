@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// csvCmd represents the csv command
+// csvCmd represents the csv command.
 var csvCmd = &cobra.Command{
 	Use:   "csv",
 	Short: "Output in csv format",

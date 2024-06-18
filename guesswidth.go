@@ -205,7 +205,7 @@ func split(line string, pos []int, trimSpace bool) []string {
 			if trimSpace {
 				columns[n] = strings.TrimSpace(col)
 			} else {
-				columns[n] = string(col)
+				columns[n] = col
 			}
 			n++
 			start = end
@@ -217,7 +217,7 @@ func split(line string, pos []int, trimSpace bool) []string {
 		if trimSpace {
 			columns[n] = strings.TrimSpace(col)
 		} else {
-			columns[n] = string(col)
+			columns[n] = col
 		}
 	}
 	return columns
@@ -268,9 +268,9 @@ func countBlanks(blanks []int, line string) []int {
 			blanks[n] += 1
 		}
 
-		n += 1
+		n++
 		if runewidth.RuneWidth(r) == 2 {
-			n += 1
+			n++
 		}
 	}
 	return blanks

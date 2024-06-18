@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// rootCmd represents the base command when called without any subcommands
+// rootCmd represents the base command when called without any subcommands.
 var rootCmd = &cobra.Command{
 	Use:   "guesswidth",
 	Short: "Guess the width of the column and split it",
@@ -71,5 +71,4 @@ func init() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-
 }
