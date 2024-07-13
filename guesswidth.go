@@ -21,6 +21,8 @@ type GuessWidth struct {
 	reader *bufio.Reader
 	// pos is a list of separator positions.
 	pos []int
+	// Widths is the width of the column.
+	Widths []Cols
 	// preLines stores the lines read for scan.
 	preLines []string
 	// preCount is the number returned by read.
@@ -38,6 +40,17 @@ type GuessWidth struct {
 	// TrimSpace is whether to trim the space in the value.
 	TrimSpace bool
 }
+
+type Cols struct {
+	Width      int
+	Justified  int
+	rightCount int
+}
+
+const (
+	Left = iota
+	Right
+)
 
 // NewReader returns a new Reader that reads from r.
 func NewReader(r io.Reader) *GuessWidth {
@@ -61,15 +74,67 @@ func (g *GuessWidth) ReadAll() [][]string {
 		g.Scan(g.ScanNum)
 	}
 
+	g.Widths = make([]Cols, len(g.pos)+1)
 	var rows [][]string
 	for {
 		columns, err := g.Read()
 		if err != nil {
 			break
 		}
+		g.UpdateMaxWidth(columns)
 		rows = append(rows, columns)
 	}
+
+	g.SetJustified(len(rows) / 2)
 	return rows
+}
+
+// UpdateMaxWidth updates the maximum width of the column.
+func (g *GuessWidth) UpdateMaxWidth(columns []string) []Cols {
+	if len(g.Widths) < len(columns) {
+		for n := len(g.Widths); n < len(columns); n++ {
+			g.Widths = append(g.Widths, Cols{})
+		}
+	}
+
+	for n, col := range columns {
+		width := runewidth.StringWidth(col)
+		if width > g.Widths[n].Width {
+			g.Widths[n].Width = width
+		}
+		if isRightAlign(col) {
+			g.Widths[n].rightCount++
+		}
+	}
+	return g.Widths
+}
+
+// SetJustified sets the justification of the column.
+func (g *GuessWidth) SetJustified(threshold int) []Cols {
+	for n, col := range g.Widths {
+		if col.rightCount < threshold {
+			col.Justified = Left
+		} else {
+			col.Justified = Right
+		}
+		g.Widths[n] = col
+	}
+	return g.Widths
+}
+
+func isRightAlign(str string) bool {
+	if str == "" {
+		return false
+	}
+	for n := 0; n < len(str); n++ {
+		if str[n] != ' ' {
+			return false
+		}
+		if str[len(str)-n-1] != ' ' {
+			return true
+		}
+	}
+	return false
 }
 
 // Scan preReads and parses the lines.
