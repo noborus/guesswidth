@@ -23,6 +23,7 @@ func TestGuessWidth_ReadAll(t *testing.T) {
 		name   string
 		fields fields
 		want   [][]string
+		want2  []Cols
 	}{
 		{
 			name: "ps",
@@ -37,6 +38,12 @@ func TestGuessWidth_ReadAll(t *testing.T) {
 				{"   PID", " TTY     ", "     TIME", "CMD"},
 				{"302965", " pts/3   ", " 00:00:11", "zsh"},
 				{"709737", " pts/3   ", " 00:00:00", "ps"},
+			},
+			want2: []Cols{
+				{6, 1, 1},
+				{9, 0, 0},
+				{9, 1, 3},
+				{3, 0, 0},
 			},
 		},
 		{
@@ -55,6 +62,19 @@ noborus   721971  0.0  0.0  13716  3524 pts/3    R+   10:39   0:00 ps aux`)),
 				{"noborus  ", " 703052", "  2.1", "  0.7", " 1184814400", " 230920", " ?  ", " Sl  ", " 10:03  ", " 0:45", "/opt/google/chrome/chrome"},
 				{"noborus  ", " 721971", "  0.0", "  0.0", "  13716", "  3524", " pts/3   ", " R+  ", " 10:39  ", " 0:00", "ps aux"},
 			},
+			want2: []Cols{
+				{9, 0, 0},
+				{7, 1, 4},
+				{5, 1, 4},
+				{5, 1, 4},
+				{11, 1, 4},
+				{7, 1, 4},
+				{9, 0, 0},
+				{5, 0, 1},
+				{8, 0, 0},
+				{5, 1, 4},
+				{25, 0, 0},
+			},
 		},
 		{
 			name: "ps limit",
@@ -70,6 +90,11 @@ noborus   721971  0.0  0.0  13716  3524 pts/3    R+   10:39   0:00 ps aux`)),
 				{"   PID", " TTY     ", "    TIME CMD"},
 				{"302965", " pts/3   ", "00:00:11 zsh"},
 				{"709737", " pts/3   ", "00:00:00 ps"},
+			},
+			want2: []Cols{
+				{6, 1, 1},
+				{9, 0, 0},
+				{12, 1, 1},
 			},
 		},
 	}
@@ -88,6 +113,9 @@ noborus   721971  0.0  0.0  13716  3524 pts/3    R+   10:39   0:00 ps aux`)),
 			}
 			if got := g.ReadAll(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("GuessWidth.ReadAll() = \n%#v, want \n%#v", got, tt.want)
+			}
+			if got2 := g.Widths; !reflect.DeepEqual(got2, tt.want2) {
+				t.Errorf("GuessWidth.ReadAll() = \n%v, want \n%v", got2, tt.want2)
 			}
 		})
 	}
