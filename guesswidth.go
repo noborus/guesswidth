@@ -98,7 +98,7 @@ func (g *GuessWidth) UpdateMaxWidth(columns []string) []Cols {
 	}
 
 	for n, col := range columns {
-		width := runewidth.StringWidth(col)
+		width := runewidth.StringWidth(strings.TrimSpace(col))
 		if width > g.Widths[n].Width {
 			g.Widths[n].Width = width
 		}
