@@ -52,8 +52,42 @@ PID,TTY,TIME,CMD
 733213,pts/3,00:00:00,guesswidth
 ```
 
-##
+```console
+ps | guesswidth --align
+   PID|TTY  |    TIME|CMD
+302965|pts/3|00:00:12|zsh
+733211|pts/3|00:00:00|ps
+733212|pts/3|00:00:00|tee
+733213|pts/3|00:00:00|guesswidth
+```
 
+## Usage
+
+```console
+$ guesswidth -h         [~/dev/src/github.com/noborus/guesswidth]
+Guess the width of the columns from the header and body,
+split them, insert fences and output.
+
+Usage:
+  guesswidth [flags]
+  guesswidth [command]
+
+Available Commands:
+  completion  Generate the autocompletion script for the specified shell
+  csv         Output in csv format
+  help        Help about any command
+
+Flags:
+  -a, --align          align the output
+      --fence string   fence (default "|")
+      --header int     header line number (default 1)
+  -h, --help           help for guesswidth
+      --scannum int    number of line to scan (default 100)
+      --split int      maximum number of splits (default -1)
+  -v, --version        version for guesswidth
+
+Use "guesswidth [command] --help" for more information about a command.
+```
 
 ## Examples
 

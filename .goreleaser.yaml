@@ -1,11 +1,9 @@
-# This is an example .goreleaser.yml file with some sensible defaults.
-# Make sure to check the documentation at https://goreleaser.com
+version: 2
+
 before:
   hooks:
     # You may remove this if you don't use go modules.
     - go mod tidy
-    # you may remove this if you don't need go generate
-    - go generate ./...
 builds:
   - env:
       - CGO_ENABLED=0
@@ -16,16 +14,8 @@ builds:
     id: "guesswidth"
     main: ./cmd/guesswidth
 archives:
-- name_template: >-
-      {{ .ProjectName }}_
-      {{- .Version }}_
-      {{- if eq .Os "freebsd" }}FreeBSD
-      {{- else }}{{ title .Os }}{{ end }}_
-      {{- if eq .Arch "amd64" }}64bit
-      {{- else if eq .Arch "386" }}32bit
-      {{- else if eq .Arch "arm64" }}ARM64
-      {{- else if eq .Arch "riscv64" }}RISCV
-      {{- else }}{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ end }}
+- name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
 checksum:
   name_template: 'checksums.txt'
 snapshot:
@@ -37,10 +27,17 @@ changelog:
       - '^docs:'
       - '^test:'
 brews:
-  - tap:
+  - 
+    name: guesswidth
+    repository:
       owner: noborus
       name: homebrew-tap
       token: "{{ .Env.TAP_GITHUB_TOKEN }}"
+    commit_author:
+      name:  noborus
+      email: noborusai@gmail.com
+    description: "guesses the column position for fixed-width formats(fwf)"
+    homepage: "https://noborus.github.io/"
 
 # modelines, feel free to remove those if you don't want/use them:
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
