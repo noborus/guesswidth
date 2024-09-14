@@ -102,7 +102,7 @@ func (g *GuessWidth) UpdateMaxWidth(columns []string) []Cols {
 		if width > g.Widths[n].Width {
 			g.Widths[n].Width = width
 		}
-		if isRightAlign(col) {
+		if len(col) != g.Widths[n].Width && isRightAlign(col) {
 			g.Widths[n].rightCount++
 		}
 	}
@@ -215,7 +215,7 @@ func Positions(lines []string, header int, minLines int) []int {
 	return positions(blanks, minLines)
 }
 
-func separatorPosition(lr []rune, p int, pos []int, n int) int {
+func separatorPosition(lr []rune, p int, start int, pos []int, n int) int {
 	if unicode.IsSpace(lr[p]) {
 		return p
 	}
@@ -233,9 +233,6 @@ func separatorPosition(lr []rune, p int, pos []int, n int) int {
 		bp++
 	}
 
-	if b == pos[n] {
-		return f
-	}
 	if n < len(pos)-1 {
 		if f == pos[n+1] {
 			return b
@@ -247,22 +244,25 @@ func separatorPosition(lr []rune, p int, pos []int, n int) int {
 			return b
 		}
 	}
+	if fp > bp && b != start {
+		return b
+	}
 	return f
 }
 
 func split(line string, pos []int, trimSpace bool) []string {
 	n := 0
-	start := 0
+	start, end := 0, 0
 	columns := make([]string, len(pos)+1)
 	lr := []rune(line)
 	w := 0
 	for p := 0; p < len(lr); p++ {
 		if n > len(pos)-1 {
-			start = p
+			start = end + 1
 			break
 		}
 		if pos[n] <= w {
-			end := separatorPosition(lr, p, pos, n)
+			end = separatorPosition(lr, p, start, pos, n)
 			if start > end {
 				break
 			}
