@@ -3,7 +3,7 @@ module github.com/noborus/guesswidth
 go 1.18
 
 require (
-	github.com/mattn/go-runewidth v0.0.15
+	github.com/mattn/go-runewidth v0.0.16
 	github.com/spf13/cobra v1.8.1
 )
 

@@ -85,7 +85,7 @@ func (g *GuessWidth) ReadAll() [][]string {
 		rows = append(rows, columns)
 	}
 
-	g.SetJustified(len(rows) / 2)
+	g.SetJustified(len(rows) / 4)
 	return rows
 }
 
@@ -97,12 +97,13 @@ func (g *GuessWidth) UpdateMaxWidth(columns []string) []Cols {
 		}
 	}
 
+	lastCol := len(g.Widths) - 1
 	for n, col := range columns {
 		width := runewidth.StringWidth(strings.TrimSpace(col))
 		if width > g.Widths[n].Width {
 			g.Widths[n].Width = width
 		}
-		if len(col) != g.Widths[n].Width && isRightAlign(col) {
+		if n != lastCol && isRightAlign(col) {
 			g.Widths[n].rightCount++
 		}
 	}
@@ -244,7 +245,7 @@ func separatorPosition(lr []rune, p int, start int, pos []int, n int) int {
 			return b
 		}
 	}
-	if fp > bp && b != start {
+	if fp > bp && b > start {
 		return b
 	}
 	return f
