@@ -13,7 +13,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/mattn/go-runewidth"
+	"github.com/rivo/uniseg"
 )
 
 // GuessWidth reads records from printf-like output.
@@ -99,7 +99,7 @@ func (g *GuessWidth) UpdateMaxWidth(columns []string) []Cols {
 
 	lastCol := len(g.Widths) - 1
 	for n, col := range columns {
-		width := runewidth.StringWidth(strings.TrimSpace(col))
+		width := uniseg.StringWidth(strings.TrimSpace(col))
 		if width > g.Widths[n].Width {
 			g.Widths[n].Width = width
 		}
@@ -127,11 +127,12 @@ func isRightAlign(str string) bool {
 	if str == "" {
 		return false
 	}
+	r := len(str) - 1
 	for n := 0; n < len(str); n++ {
 		if str[n] != ' ' {
 			return false
 		}
-		if str[len(str)-n-1] != ' ' {
+		if str[r-n] != ' ' {
 			return true
 		}
 	}
@@ -276,20 +277,22 @@ func split(line string, pos []int, trimSpace bool) []string {
 			n++
 			start = end
 		}
-		w += runewidth.RuneWidth(lr[p])
+		w += uniseg.StringWidth(string(lr[p]))
 	}
-	if n < len(columns) {
-		col := string(lr[start:])
-		if trimSpace {
-			columns[n] = strings.TrimSpace(col)
-		} else {
-			columns[n] = col
-		}
+	if start >= len(lr) {
+		return columns
 	}
+
+	// Handle the remaining part of the line after the last separator.
+	col := string(lr[start:])
+	if trimSpace {
+		col = strings.TrimSpace(col)
+	}
+	columns[n] = col
 	return columns
 }
 
-// roRows returns rows separated by columns.
+// toRows returns rows separated by columns.
 func toRows(lines []string, pos []int, trimSpace bool) [][]string {
 	rows := make([][]string, 0, len(lines))
 	for _, line := range lines {
@@ -316,7 +319,7 @@ func lookupBlanks(line string) []int {
 
 		first = false
 		blanks = append(blanks, 0)
-		if runewidth.RuneWidth(v) == 2 {
+		if uniseg.StringWidth(string(v)) == 2 {
 			blanks = append(blanks, 0)
 		}
 	}
@@ -335,7 +338,7 @@ func countBlanks(blanks []int, line string) []int {
 		}
 
 		n++
-		if runewidth.RuneWidth(r) == 2 {
+		if uniseg.StringWidth(string(r)) == 2 {
 			n++
 		}
 	}
