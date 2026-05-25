@@ -13,8 +13,13 @@ builds:
       - darwin
     id: "guesswidth"
     main: ./cmd/guesswidth
+
 archives:
 - name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+release:
+  extra_files:
+    - glob: ./dist/homebrew/*.rb
 
 checksum:
   name_template: 'checksums.txt'
@@ -27,16 +32,16 @@ changelog:
       - '^docs:'
       - '^test:'
 brews:
-  - 
+  -
     name: guesswidth
     repository:
       owner: noborus
       name: homebrew-tap
-      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
+    skip_upload: true
     commit_author:
-      name:  noborus
+      name: noborus
       email: noborusai@gmail.com
-    description: "guesses the column position for fixed-width formats(fwf)"
+    description: "guesses the column position for fixed-width formats (fwf)"
     homepage: "https://noborus.github.io/"
 
 # modelines, feel free to remove those if you don't want/use them:
