@@ -41,6 +41,7 @@ type GuessWidth struct {
 	TrimSpace bool
 }
 
+// Cols is the width and justification of the column.
 type Cols struct {
 	Width      int
 	Justified  int
@@ -188,6 +189,9 @@ func ToTable(lines []string, header int, trimSpace bool) [][]string {
 
 // ToTableN parses a slice of lines and returns a table, but limits the number of splits.
 func ToTableN(lines []string, header int, numSplit int, trimSpace bool) [][]string {
+	if numSplit <= 0 {
+		return ToTable(lines, header, trimSpace)
+	}
 	pos := Positions(lines, header, 2)
 	if len(pos) > numSplit {
 		pos = pos[:numSplit]
@@ -302,13 +306,14 @@ func toRows(lines []string, pos []int, trimSpace bool) [][]string {
 	return rows
 }
 
-// Creates a blank(1) and non-blank(0) slice.
-// Execute for the base line (header line).
+// lookupBlanks returns a slice of counts of blank spaces in the line.
 func lookupBlanks(line string) []int {
 	blanks := make([]int, 0)
 	first := true
-	for _, v := range line {
-		if v == ' ' {
+	gr := uniseg.NewGraphemes(line)
+	for gr.Next() {
+		v := gr.Str()
+		if v == " " {
 			if first {
 				blanks = append(blanks, 0)
 				continue
@@ -319,26 +324,28 @@ func lookupBlanks(line string) []int {
 
 		first = false
 		blanks = append(blanks, 0)
-		if uniseg.StringWidth(string(v)) == 2 {
+		if gr.Width() == 2 {
 			blanks = append(blanks, 0)
 		}
 	}
 	return blanks
 }
 
-// Count up if the line is blank where the reference line was blank.
+// countBlanks counts the number of blank spaces in the line and updates the blanks slice.
 func countBlanks(blanks []int, line string) []int {
 	n := 0
-	for _, r := range line {
+	gr := uniseg.NewGraphemes(line)
+	for gr.Next() {
+		r := gr.Str()
 		if n >= len(blanks) {
 			break
 		}
-		if r == ' ' && blanks[n] > 0 {
+		if r == " " && blanks[n] > 0 {
 			blanks[n] += 1
 		}
 
 		n++
-		if uniseg.StringWidth(string(r)) == 2 {
+		if gr.Width() == 2 {
 			n++
 		}
 	}
@@ -380,6 +387,7 @@ var (
 	revision string
 )
 
+// Version returns the version of the package.
 func Version() string {
 	if version != "" {
 		return version + " rev:" + revision
