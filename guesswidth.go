@@ -43,14 +43,16 @@ type GuessWidth struct {
 
 // Cols is the width and justification of the column.
 type Cols struct {
-	Width      int
-	Justified  int
-	rightCount int
+	Width      int // Width is the width of the column.
+	Justified  int // Justified indicates the justification of the column (Left or Right).
+	rightCount int // rightCount is the number of times the column appears to be right-aligned.
 }
 
+// Justification constants for columns.
 const (
-	Left = iota
-	Right
+	Left  = iota // Left indicates left alignment.
+	Right        // Right indicates right alignment.
+
 )
 
 // NewReader returns a new Reader that reads from r.
@@ -124,6 +126,7 @@ func (g *GuessWidth) SetJustified(threshold int) []Cols {
 	return g.Widths
 }
 
+// isRightAlign checks if a string is right-aligned based on trailing spaces.
 func isRightAlign(str string) bool {
 	if str == "" {
 		return false
@@ -221,6 +224,7 @@ func Positions(lines []string, header int, minLines int) []int {
 	return positions(blanks, minLines)
 }
 
+// separatorPosition determines the best position for a separator in a line.
 func separatorPosition(lr []rune, p int, start int, pos []int, n int) int {
 	if unicode.IsSpace(lr[p]) {
 		return p
@@ -256,6 +260,7 @@ func separatorPosition(lr []rune, p int, start int, pos []int, n int) int {
 	return f
 }
 
+// split splits a line into columns based on separator positions.
 func split(line string, pos []int, trimSpace bool) []string {
 	n := 0
 	start, end := 0, 0
@@ -352,7 +357,7 @@ func countBlanks(blanks []int, line string) []int {
 	return blanks
 }
 
-// Generates a list of separator positions from a blank slice.
+// Positions generates a list of separator positions from a blank slice.
 func positions(blanks []int, minLines int) []int {
 	max := minLines
 	p := 0
@@ -373,8 +378,8 @@ func positions(blanks []int, minLines int) []int {
 	return pos
 }
 
-// debugCountPrint is for debugging which prints the space count.
-func debugCountPrint(line string, blanks []int) {
+// DebugCountPrint is for debugging which prints the space count.
+func DebugCountPrint(line string, blanks []int) {
 	fmt.Println(line)
 	for _, k := range blanks {
 		fmt.Print(k)
