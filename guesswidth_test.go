@@ -194,3 +194,49 @@ func TestToTableN(t *testing.T) {
 		})
 	}
 }
+
+func TestGuessWidth_UpdateMaxWidth(t *testing.T) {
+	g := &GuessWidth{Widths: make([]Cols, 2)}
+
+	got := g.UpdateMaxWidth([]string{" 12", "abc"})
+	want := []Cols{{Width: 2, rightCount: 1}, {Width: 3}}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("UpdateMaxWidth() = %v, want %v", got, want)
+	}
+}
+
+func TestGuessWidth_SetJustified(t *testing.T) {
+	g := &GuessWidth{Widths: []Cols{{rightCount: 1}, {rightCount: 2}}}
+
+	got := g.SetJustified(2)
+	want := []Cols{{Justified: Left, rightCount: 1}, {Justified: Right, rightCount: 2}}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("SetJustified() = %v, want %v", got, want)
+	}
+}
+
+func TestGuessWidth_Scan(t *testing.T) {
+	g := NewReader(strings.NewReader("A  B\n1  2\n"))
+	g.Scan(2)
+
+	if !reflect.DeepEqual(g.pos, []int{2}) {
+		t.Errorf("Scan() positions = %v, want [2]", g.pos)
+	}
+	if !reflect.DeepEqual(g.preLines, []string{"A  B", "1  2"}) {
+		t.Errorf("Scan() lines = %v, want [A  B 1  2]", g.preLines)
+	}
+}
+
+func TestPositions(t *testing.T) {
+	lines := []string{"ignored", "A  B", "1  2"}
+	got := Positions(lines, 1, 2)
+	if !reflect.DeepEqual(got, []int{2}) {
+		t.Errorf("Positions() = %v, want [2]", got)
+	}
+}
+
+func TestVersion(t *testing.T) {
+	if got := Version(); got == "" {
+		t.Error("Version() returned an empty string")
+	}
+}
