@@ -144,14 +144,27 @@ func isRightAlign(str string) bool {
 	return false
 }
 
+// readLine reads a single line from the reader, handling line endings and EOF correctly.
+func readLine(reader *bufio.Reader) (string, error) {
+	line, err := reader.ReadString('\n')
+	if err != nil && (err != io.EOF || len(line) == 0) {
+		return "", err
+	}
+	if strings.HasSuffix(line, "\n") {
+		line = strings.TrimSuffix(line, "\n")
+		line = strings.TrimSuffix(line, "\r")
+	}
+	return line, nil
+}
+
 // Scan preReads and parses the lines.
 func (g *GuessWidth) Scan(num int) {
 	for i := 0; i < num; i++ {
-		buf, _, err := g.reader.ReadLine()
+		line, err := readLine(g.reader)
 		if err != nil {
 			break
 		}
-		g.preLines = append(g.preLines, string(buf))
+		g.preLines = append(g.preLines, line)
 	}
 
 	g.pos = Positions(g.preLines, g.Header, g.MinLines)
@@ -175,11 +188,11 @@ func (g *GuessWidth) Read() ([]string, error) {
 		line = g.preLines[g.preCount]
 		g.preCount++
 	} else {
-		buf, _, err := g.reader.ReadLine()
+		var err error
+		line, err = readLine(g.reader)
 		if err != nil {
 			return nil, err
 		}
-		line = string(buf)
 	}
 
 	return split(line, g.pos, g.TrimSpace), nil

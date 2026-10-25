@@ -121,6 +121,22 @@ noborus   721971  0.0  0.0  13716  3524 pts/3    R+   10:39   0:00 ps aux`)),
 	}
 }
 
+func TestGuessWidth_ReadAllLongLines(t *testing.T) {
+	prefix := strings.Repeat("x", 8192)
+	input := prefix + "  H\n" + prefix + "  1\n" + prefix + "  2\n"
+	g := NewReader(strings.NewReader(input))
+	g.ScanNum = 2
+
+	want := [][]string{
+		{prefix, "H"},
+		{prefix, "1"},
+		{prefix, "2"},
+	}
+	if got := g.ReadAll(); !reflect.DeepEqual(got, want) {
+		t.Errorf("GuessWidth.ReadAll() = %#v, want %#v", got, want)
+	}
+}
+
 func TestToTable(t *testing.T) {
 	type args struct {
 		lines     []string
