@@ -12,6 +12,7 @@ import (
 	"runtime/debug"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 
 	"github.com/rivo/uniseg"
 )
@@ -225,32 +226,43 @@ func Positions(lines []string, header int, minLines int) []int {
 }
 
 // separatorPosition determines the best position for a separator in a line.
-func separatorPosition(lr []rune, p int, start int, pos []int, n int) int {
-	if unicode.IsSpace(lr[p]) {
+func separatorPosition(graphemes []string, widths []int, p int, start int, pos []int, n int, w int) int {
+	r, _ := utf8.DecodeRuneInString(graphemes[p])
+	if unicode.IsSpace(r) {
 		return p
 	}
 
 	f := p
 	fp := 0
 
-	for ; f < len(lr) && !unicode.IsSpace(lr[f]); f++ {
-		fp++
+	for ; f < len(graphemes); f++ {
+		r, _ := utf8.DecodeRuneInString(graphemes[f])
+		if unicode.IsSpace(r) {
+			break
+		}
+		fp += widths[f]
 	}
 
 	b := p
 	bp := 0
-	for ; b > 0 && !unicode.IsSpace(lr[b]); b-- {
-		bp++
+	for ; b > 0; b-- {
+		r, _ := utf8.DecodeRuneInString(graphemes[b])
+		if unicode.IsSpace(r) {
+			break
+		}
+		bp += widths[b]
 	}
 
+	fWidth := w + fp
+	bWidth := w - bp
 	if n < len(pos)-1 {
-		if f == pos[n+1] {
+		if fWidth == pos[n+1] {
 			return b
 		}
-		if b == pos[n] {
+		if bWidth == pos[n] {
 			return f
 		}
-		if b > pos[n] && b < pos[n+1] {
+		if bWidth > pos[n] && bWidth < pos[n+1] {
 			return b
 		}
 	}
@@ -262,22 +274,37 @@ func separatorPosition(lr []rune, p int, start int, pos []int, n int) int {
 
 // split splits a line into columns based on separator positions.
 func split(line string, pos []int, trimSpace bool) []string {
+	columns := make([]string, len(pos)+1)
+	if len(pos) == 0 {
+		if trimSpace {
+			line = strings.TrimSpace(line)
+		}
+		columns[0] = line
+		return columns
+	}
+
+	var graphemes []string
+	var widths []int
+	gr := uniseg.NewGraphemes(line)
+	for gr.Next() {
+		graphemes = append(graphemes, gr.Str())
+		widths = append(widths, gr.Width())
+	}
+
 	n := 0
 	start, end := 0, 0
-	columns := make([]string, len(pos)+1)
-	lr := []rune(line)
 	w := 0
-	for p := 0; p < len(lr); p++ {
-		if n > len(pos)-1 {
+	for p := 0; p < len(graphemes); p++ {
+		if n >= len(pos) {
 			start = end + 1
 			break
 		}
 		if pos[n] <= w {
-			end = separatorPosition(lr, p, start, pos, n)
+			end = separatorPosition(graphemes, widths, p, start, pos, n, w)
 			if start > end {
 				break
 			}
-			col := string(lr[start:end])
+			col := strings.Join(graphemes[start:end], "")
 			if trimSpace {
 				columns[n] = strings.TrimSpace(col)
 			} else {
@@ -286,14 +313,14 @@ func split(line string, pos []int, trimSpace bool) []string {
 			n++
 			start = end
 		}
-		w += uniseg.StringWidth(string(lr[p]))
+		w += widths[p]
 	}
-	if start >= len(lr) {
+	if start >= len(graphemes) {
 		return columns
 	}
 
 	// Handle the remaining part of the line after the last separator.
-	col := string(lr[start:])
+	col := strings.Join(graphemes[start:], "")
 	if trimSpace {
 		col = strings.TrimSpace(col)
 	}

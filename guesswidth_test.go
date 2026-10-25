@@ -235,6 +235,44 @@ func TestPositions(t *testing.T) {
 	}
 }
 
+func TestSplitGraphemes(t *testing.T) {
+	tests := []struct {
+		name string
+		line string
+		pos  []int
+		trim bool
+		want []string
+	}{
+		{
+			name: "emoji grapheme",
+			line: "👩‍👩‍👧‍👦  next",
+			pos:  []int{2},
+			trim: false,
+			want: []string{"👩‍👩‍👧‍👦", " next"},
+		},
+		{
+			name: "combining mark",
+			line: "e\u0301  next",
+			pos:  []int{2},
+			trim: true,
+			want: []string{"e\u0301", "next"},
+		},
+		{
+			name: "no separator",
+			line: "hello",
+			trim: true,
+			want: []string{"hello"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := split(tt.line, tt.pos, tt.trim); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("split() = %#v, want %#v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestVersion(t *testing.T) {
 	if got := Version(); got == "" {
 		t.Error("Version() returned an empty string")
