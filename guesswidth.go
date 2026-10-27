@@ -89,7 +89,12 @@ func (g *GuessWidth) ReadAll() [][]string {
 		rows = append(rows, columns)
 	}
 
-	g.SetJustified(len(rows) / 4)
+	rightThreshold := len(rows) / 2
+	if rightThreshold == 0 {
+		// Avoid deciding alignment from a single row.
+		rightThreshold = len(rows)
+	}
+	g.SetJustified(rightThreshold)
 	return rows
 }
 
@@ -114,12 +119,11 @@ func (g *GuessWidth) UpdateMaxWidth(columns []string) []Cols {
 	return g.Widths
 }
 
-// SetJustified sets the justification of the column.
+// SetJustified marks a column as right-justified when its right-aligned row count
+// exceeds threshold.
 func (g *GuessWidth) SetJustified(threshold int) []Cols {
 	for n, col := range g.Widths {
-		if col.rightCount < threshold {
-			col.Justified = Left
-		} else {
+		if col.rightCount > threshold {
 			col.Justified = Right
 		}
 		g.Widths[n] = col
@@ -128,6 +132,7 @@ func (g *GuessWidth) SetJustified(threshold int) []Cols {
 }
 
 // isRightAlign checks if a string is right-aligned based on trailing spaces.
+// A string is considered right-aligned if it has non-space characters followed by one or more spaces at the end.
 func isRightAlign(str string) bool {
 	if str == "" {
 		return false
@@ -150,8 +155,8 @@ func readLine(reader *bufio.Reader) (string, error) {
 	if err != nil && (err != io.EOF || len(line) == 0) {
 		return "", err
 	}
-	if strings.HasSuffix(line, "\n") {
-		line = strings.TrimSuffix(line, "\n")
+	if before, ok := strings.CutSuffix(line, "\n"); ok {
+		line = before
 		line = strings.TrimSuffix(line, "\r")
 	}
 	return line, nil
@@ -159,7 +164,7 @@ func readLine(reader *bufio.Reader) (string, error) {
 
 // Scan preReads and parses the lines.
 func (g *GuessWidth) Scan(num int) {
-	for i := 0; i < num; i++ {
+	for range num {
 		line, err := readLine(g.reader)
 		if err != nil {
 			break
