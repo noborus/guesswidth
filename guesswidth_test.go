@@ -40,10 +40,10 @@ func TestGuessWidth_ReadAll(t *testing.T) {
 				{"709737", " pts/3   ", " 00:00:00", "ps"},
 			},
 			want2: []Cols{
-				{6, 1, 1},
-				{5, 1, 0},
+				{6, 0, 1},
+				{5, 0, 0},
 				{8, 1, 3},
-				{3, 1, 0},
+				{3, 0, 0},
 			},
 		},
 		{
@@ -70,7 +70,7 @@ noborus   721971  0.0  0.0  13716  3524 pts/3    R+   10:39   0:00 ps aux`)),
 				{10, 1, 4},
 				{6, 1, 4},
 				{5, 0, 0},
-				{4, 1, 1},
+				{4, 0, 1},
 				{5, 0, 0},
 				{4, 1, 4},
 				{25, 0, 0},
@@ -92,9 +92,9 @@ noborus   721971  0.0  0.0  13716  3524 pts/3    R+   10:39   0:00 ps aux`)),
 				{"709737", " pts/3   ", "00:00:00 ps"},
 			},
 			want2: []Cols{
-				{6, 1, 1},
-				{5, 1, 0},
-				{12, 1, 0},
+				{6, 0, 1},
+				{5, 0, 0},
+				{12, 0, 0},
 			},
 		},
 	}
@@ -222,12 +222,30 @@ func TestGuessWidth_UpdateMaxWidth(t *testing.T) {
 }
 
 func TestGuessWidth_SetJustified(t *testing.T) {
-	g := &GuessWidth{Widths: []Cols{{rightCount: 1}, {rightCount: 2}}}
+	tests := []struct {
+		name      string
+		threshold int
+		want      []Cols
+	}{
+		{
+			name:      "threshold one",
+			threshold: 1,
+			want:      []Cols{{Justified: Left}, {Justified: Left, rightCount: 1}, {Justified: Right, rightCount: 2}},
+		},
+		{
+			name:      "threshold two",
+			threshold: 2,
+			want:      []Cols{{Justified: Left}, {Justified: Left, rightCount: 1}, {Justified: Left, rightCount: 2}},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			g := &GuessWidth{Widths: []Cols{{}, {rightCount: 1}, {rightCount: 2}}}
 
-	got := g.SetJustified(2)
-	want := []Cols{{Justified: Left, rightCount: 1}, {Justified: Right, rightCount: 2}}
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("SetJustified() = %v, want %v", got, want)
+			if got := g.SetJustified(tt.threshold); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("SetJustified(%d) = %v, want %v", tt.threshold, got, tt.want)
+			}
+		})
 	}
 }
 
