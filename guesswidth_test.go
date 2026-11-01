@@ -137,6 +137,28 @@ func TestGuessWidth_ReadAllLongLines(t *testing.T) {
 	}
 }
 
+func TestToTable_LastHeaderColumn(t *testing.T) {
+	lines := []string{
+		"OWNER         ID     STATUS DETAILS",
+		"noborus      16101   ready /Applications/Ghostty.app/Contents/MacOS/ghostty",
+		"root         1       stopped -/bin/zsh",
+	}
+
+	got := ToTable(lines, 0, true)
+	if len(got) != 3 {
+		t.Fatalf("len(ToTable) = %d, want 3", len(got))
+	}
+	if len(got[1]) != 4 {
+		t.Fatalf("len(row1) = %d, want 4: %#v", len(got[1]), got[1])
+	}
+	if got[1][2] != "ready" || got[1][3] != "/Applications/Ghostty.app/Contents/MacOS/ghostty" {
+		t.Fatalf("split row1 = %#v, want STATUS and DETAILS separated", got[1])
+	}
+	if got[2][2] != "stopped" || got[2][3] != "-/bin/zsh" {
+		t.Fatalf("split row2 = %#v, want STATUS and DETAILS separated", got[2])
+	}
+}
+
 func TestToTable(t *testing.T) {
 	type args struct {
 		lines     []string

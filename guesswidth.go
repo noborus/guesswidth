@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"runtime/debug"
+	"sort"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -240,7 +241,48 @@ func Positions(lines []string, header int, minLines int) []int {
 		}
 		blanks = countBlanks(blanks, strings.TrimSuffix(line, " "))
 	}
-	return positions(blanks, minLines)
+
+	pos := positions(blanks, minLines)
+	if header < len(lines) {
+		if p, ok := lastHeaderColumnPosition(lines[header]); ok {
+			found := false
+			for _, existing := range pos {
+				if existing >= p-1 && existing <= p {
+					found = true
+					break
+				}
+			}
+			if !found {
+				pos = append(pos, p)
+				sort.Ints(pos)
+			}
+		}
+	}
+	return pos
+}
+
+func lastHeaderColumnPosition(line string) (int, bool) {
+	gr := uniseg.NewGraphemes(line)
+	width := 0
+	lastColumnStart := 0
+	hasPreviousColumn := false
+	previousWasSpace := true
+	for gr.Next() {
+		value := gr.Str()
+		if value == " " {
+			previousWasSpace = true
+		} else {
+			if previousWasSpace {
+				if hasPreviousColumn {
+					lastColumnStart = width
+				}
+				hasPreviousColumn = true
+			}
+			previousWasSpace = false
+		}
+		width += gr.Width()
+	}
+	return lastColumnStart, hasPreviousColumn && lastColumnStart > 0
 }
 
 // separatorPosition determines the best position for a separator in a line.
