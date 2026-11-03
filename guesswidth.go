@@ -316,6 +316,9 @@ func separatorPosition(graphemes []string, widths []int, p int, start int, pos [
 	fWidth := w + fp
 	bWidth := w - bp
 	if n < len(pos)-1 {
+		if separatorBeforeDoubleSpace(graphemes, widths, p, f, fWidth, pos[n+1]) {
+			return f
+		}
 		if fWidth == pos[n+1] {
 			return b
 		}
@@ -330,6 +333,44 @@ func separatorPosition(graphemes []string, widths []int, p int, start int, pos [
 		return b
 	}
 	return f
+}
+
+// separatorBeforeDoubleSpace keeps a shifted value in its column when the
+// following value starts after at least two spaces at the next column boundary.
+func separatorBeforeDoubleSpace(graphemes []string, widths []int, p, f, fWidth, nextPosition int) bool {
+	wordStart := p == 0
+	if p > 0 {
+		r, _ := utf8.DecodeRuneInString(graphemes[p-1])
+		wordStart = unicode.IsSpace(r)
+	}
+	if !wordStart || f >= len(graphemes) {
+		return false
+	}
+
+	next := f
+	spaceWidth := 0
+	for next < len(graphemes) {
+		r, _ := utf8.DecodeRuneInString(graphemes[next])
+		if !unicode.IsSpace(r) {
+			break
+		}
+		spaceWidth += widths[next]
+		next++
+	}
+	if spaceWidth < 2 || next >= len(graphemes) {
+		return false
+	}
+
+	nextWidth := fWidth + spaceWidth
+	for next < len(graphemes) {
+		r, _ := utf8.DecodeRuneInString(graphemes[next])
+		if unicode.IsSpace(r) {
+			break
+		}
+		nextWidth += widths[next]
+		next++
+	}
+	return nextWidth == nextPosition
 }
 
 // split splits a line into columns based on separator positions.

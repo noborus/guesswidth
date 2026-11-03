@@ -159,6 +159,45 @@ func TestToTable_LastHeaderColumn(t *testing.T) {
 	}
 }
 
+func TestToTable_ShiftedColumnWithDoubleSpace(t *testing.T) {
+	lines := []string{
+		"USER               PID  %CPU %MEM      VSZ    RSS   TT  STAT STARTED      TIME COMMAND",
+		"_mds_stores        845  13.8  2.3 444217440 579536   ??  Ss   24Aug26 124:52.34 mds_stores",
+		"_windowserver      595   9.3  0.6 436109072 148256   ??  Ss   24Aug26 1910:22.18 WindowServer",
+		"noborusai        42356   2.8  0.1 435375200  25984   ??  S    10:14AM   0:00.11 mdworker_shared",
+		"noborusai        16101   2.8  0.8 437316592 204272   ??  S    Wed06AM   1:06.83 ghostty",
+		"noborusai         2141   0.8  1.0 441002176 253392   ??  Ss   24Aug26   2:35.70 JapaneseIM",
+		"noborusai        40973   0.7  0.0 435309392   6080 s000  S     7:26AM   0:01.06 zsh",
+		"noborusai        40462   0.4  9.4 1951534752 2376992   ??  S    11:11PM  14:37.53 Chrome",
+	}
+
+	got := ToTable(lines, 0, true)
+	if got[7][6] != "??" || got[7][7] != "S" {
+		t.Fatalf("split row = %#v at positions %v, want TT and STAT separated", got[7], Positions(lines, 0, 2))
+	}
+}
+
+func TestToTable_DoubleSpaceInCommand(t *testing.T) {
+	command1 := "printf 'a  b'"
+	command2 := "echo hello"
+	commandWidth := 24
+	lines := []string{
+		"ID  COMMAND" + strings.Repeat(" ", 19) + "STATUS",
+		"1   " + command1 + strings.Repeat(" ", commandWidth-len(command1)) + "  RUNNING",
+		"2   " + command2 + strings.Repeat(" ", commandWidth-len(command2)) + "  STOPPED",
+	}
+
+	got := ToTable(lines, 0, true)
+	want := [][]string{
+		{"ID", "COMMAND", "STATUS"},
+		{"1", command1, "RUNNING"},
+		{"2", command2, "STOPPED"},
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("ToTable() = %#v, want %#v", got, want)
+	}
+}
+
 func TestToTable(t *testing.T) {
 	type args struct {
 		lines     []string
