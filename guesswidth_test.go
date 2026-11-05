@@ -2,6 +2,7 @@ package guesswidth
 
 import (
 	"bufio"
+	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -363,6 +364,29 @@ func TestSplitGraphemes(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := split(tt.line, tt.pos, tt.trim); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("split() = %#v, want %#v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestIsRightAlign(t *testing.T) {
+	tests := []struct {
+		name string
+		str  string
+		want bool
+	}{
+		{name: "printf integer padding", str: fmt.Sprintf("%4d", 12), want: true},
+		{name: "no leading space", str: "123", want: false},
+		{name: "leading tab", str: "\t123", want: false},
+		{name: "leading non-breaking space", str: "\u00a0123", want: false},
+		{name: "leading ideographic space", str: "\u3000123", want: false},
+		{name: "only ASCII spaces", str: "   ", want: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isRightAlign(tt.str); got != tt.want {
+				t.Errorf("isRightAlign(%q) = %t, want %t", tt.str, got, tt.want)
 			}
 		})
 	}
