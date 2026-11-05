@@ -18,7 +18,7 @@ var csvCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		var d rune = ','
+		var d = ','
 		if delimiter != "" {
 			d = []rune(delimiter)[0]
 		}

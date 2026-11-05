@@ -244,23 +244,32 @@ func Positions(lines []string, header int, minLines int) []int {
 
 	pos := positions(blanks, minLines)
 	if header < len(lines) {
-		if p, ok := lastHeaderColumnPosition(lines[header]); ok {
-			found := false
-			for _, existing := range pos {
-				if existing >= p-1 && existing <= p {
-					found = true
-					break
-				}
+		pos = ensureLastHeaderColumnPosition(pos, lines[header])
+	}
+	return pos
+}
+
+// ensureLastHeaderColumnPosition ensures that the last header column position
+// is included in the separator positions if it exists.
+func ensureLastHeaderColumnPosition(pos []int, headerLine string) []int {
+	if p, ok := lastHeaderColumnPosition(headerLine); ok {
+		found := false
+		for _, existing := range pos {
+			if existing >= p-1 && existing <= p {
+				found = true
+				break
 			}
-			if !found {
-				pos = append(pos, p)
-				sort.Ints(pos)
-			}
+		}
+		if !found {
+			pos = append(pos, p)
+			sort.Ints(pos)
 		}
 	}
 	return pos
 }
 
+// lastHeaderColumnPosition returns the start position of the last column in
+// the header line and a boolean indicating if it exists.
 func lastHeaderColumnPosition(line string) (int, bool) {
 	gr := uniseg.NewGraphemes(line)
 	width := 0
@@ -485,7 +494,7 @@ func countBlanks(blanks []int, line string) []int {
 	return blanks
 }
 
-// Positions generates a list of separator positions from a blank slice.
+// positions generates a list of separator positions from a blank slice.
 func positions(blanks []int, minLines int) []int {
 	max := minLines
 	p := 0
